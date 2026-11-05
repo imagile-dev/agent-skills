@@ -1,6 +1,6 @@
 {
   "name": "imagile",
-  "version": "3.1.1",
+  "version": "3.1.3",
   "description": "Imagile engineering system: principles and architecture, vertical-slice plans, parallel reviewer agents and a ship flow to merge, plus design, accessibility, AI images, web images and background removal",
   "author": {
     "name": "Imagile",

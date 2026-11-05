@@ -41,7 +41,8 @@ from pathlib import Path
 API_BASE = "https://api.openai.com/v1"
 NO_KEY_EXIT = 2
 DEFAULT_MODEL = "gpt-image-2"
-EXT_FOR_FORMAT = {"png": ".png", "jpeg": ".jpg", "webp": ".webp"}
+GIF_MODEL = "gpt-image-2.6-flare"  # animated GIF output needs a 2.6 model
+EXT_FOR_FORMAT = {"png": ".png", "jpeg": ".jpg", "webp": ".webp", "gif": ".gif"}
 
 # Repo convention: runs live in dated folders under here, palette in style.md.
 RUNS_ROOT = Path(".claude/image-generation")
@@ -192,6 +193,11 @@ def build_params(args):
         params["n"] = args.n
     if args.compression is not None:
         params["output_compression"] = args.compression
+    if args.format == "gif":
+        if args.frames is not None:
+            params["frame_count"] = args.frames
+        if args.frame_ms is not None:
+            params["frame_duration_ms"] = args.frame_ms
     # `moderation` is generation-only; edits reject it.
     if args.edit:
         params.pop("moderation", None)
@@ -239,13 +245,19 @@ def main():
                     help=f"palette/design notes folded into the prompt (default {STYLE_FILE.as_posix()})")
     ap.add_argument("--no-style", action="store_true",
                     help="ignore style.md for this run (photos, non-brand imagery)")
-    ap.add_argument("-m", "--model", default=DEFAULT_MODEL,
-                    help="gpt-image-2 (default), gpt-image-1.5, gpt-image-1, gpt-image-1-mini")
+    ap.add_argument("-m", "--model",
+                    help="gpt-image-2 (default; gpt-image-2.6-flare with --format gif), "
+                         "gpt-image-2.6-sunburst, gpt-image-1.5, gpt-image-1, gpt-image-1-mini")
     ap.add_argument("-s", "--size", help="auto, 1024x1024, 1536x1024, 1024x1536, or WIDTHxHEIGHT")
     ap.add_argument("-q", "--quality", choices=["low", "medium", "high", "auto"],
                     help="low is ~40x cheaper than high; default auto")
     ap.add_argument("-n", type=int, default=1, help="number of images (1-10)")
-    ap.add_argument("--format", choices=["png", "jpeg", "webp"], help="output format (default png)")
+    ap.add_argument("--format", choices=["png", "jpeg", "webp", "gif"],
+                    help="output format (default png). gif needs a gpt-image-2.6 model, "
+                         "generation only, and OpenAI's GIF preview access")
+    ap.add_argument("--frames", type=int, help="gif only: frame count, 2-16 (API default 9)")
+    ap.add_argument("--frame-ms", type=int,
+                    help="gif only: milliseconds per frame, 20-2000 (API default 200)")
     ap.add_argument("--compression", type=int, help="0-100, jpeg/webp only")
     ap.add_argument("--background", choices=["transparent", "opaque", "auto"],
                     help="transparent requires png or webp")
@@ -264,6 +276,17 @@ def main():
         ap.error("a prompt is required (positional argument or --prompt-file)")
     if args.mask and not args.edit:
         ap.error("--mask only applies with --edit")
+    if (args.frames is not None or args.frame_ms is not None) and args.format != "gif":
+        ap.error("--frames and --frame-ms only apply with --format gif")
+    if args.format == "gif":
+        if args.edit:
+            ap.error("--format gif is generation only; the edits endpoint does not support it")
+        if args.compression is not None:
+            ap.error("--compression is not supported with --format gif")
+        if args.n > 1 and args.frames is None:
+            print("Note: each GIF uses the request's pixel budget; lower --frames if n > 1 is rejected.",
+                  file=sys.stderr)
+    args.model = args.model or (GIF_MODEL if args.format == "gif" else DEFAULT_MODEL)
 
     slug = slugify(args.slug or args.prompt)
     args.prompt, style_used = compose_prompt(
