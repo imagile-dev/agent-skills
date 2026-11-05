@@ -1,6 +1,6 @@
 {
   "name": "imagile",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "Imagile engineering system: principles and architecture, vertical-slice plans, parallel reviewer agents and a ship flow to merge, plus design, accessibility, AI images, web images and background removal",
   "author": {
     "name": "Imagile",
@@ -26,6 +26,6 @@
     "azure"
   ],
   "skills": "./skills/",
-  "homepage": "https://github.com/imagile-dev/claude-plugins",
-  "repository": "https://github.com/imagile-dev/claude-plugins"
+  "homepage": "https://github.com/imagile-dev/agent-skills",
+  "repository": "https://github.com/imagile-dev/agent-skills"
 }

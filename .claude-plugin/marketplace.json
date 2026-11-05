@@ -6,8 +6,8 @@
     "url": "https://imagile.dev"
   },
   "metadata": {
-    "description": "Claude Code plugins from Imagile. Open source: use them, fork them, tell us what breaks.",
-    "version": "2.0.0"
+    "description": "Agent skills from Imagile. Open source: use them, fork them, tell us what breaks.",
+    "version": "3.0.0"
   },
   "plugins": [
     {
@@ -15,12 +15,6 @@
       "source": "./plugins/imagile",
       "description": "Imagile engineering system: principles and architecture, vertical-slice plans, parallel reviewer agents and a ship flow to merge, plus design, accessibility, AI images, web images and background removal",
       "category": "development"
-    },
-    {
-      "name": "sunny",
-      "source": "./plugins/sunny",
-      "description": "Sunny Kolattukudy's personal skills: his voice for writing and bios, visual taste, engineering philosophy, hiring, mentoring and default chat register",
-      "category": "productivity"
     }
   ]
 }

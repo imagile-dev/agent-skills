@@ -1,11 +1,10 @@
 # CLAUDE.md
 
-Imagile's public Claude Code plugin marketplace, `imagile`, with two plugins:
+Imagile's public agent skills repo, `agent-skills`. It ships the Claude Code plugin marketplace `imagile` with one plugin:
 
 - `plugins/imagile/`: skills anyone can use to design, plan, review and ship software, plus web tools. Written for any developer. Never assume the reader is Sunny.
-- `plugins/sunny/`: Sunny Kolattukudy's personal skills (voice, identity, hiring, mentoring). Personal by design.
 
-A new skill goes in `imagile` unless it only makes sense for Sunny. Fold new guidance into an existing skill before you add one.
+Personal and private skills do not belong here. Fold new guidance into an existing skill before you add one.
 
 ## Skill format
 

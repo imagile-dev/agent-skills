@@ -20,14 +20,8 @@
 ## Install
 
 ```text
-/plugin marketplace add imagile-dev/claude-plugins
+/plugin marketplace add imagile-dev/agent-skills
 /plugin install imagile@imagile
-```
-
-`sunny` is Sunny Kolattukudy's personal plugin. It is public so you can read it or borrow its shape, but it writes as Sunny.
-
-```text
-/plugin install sunny@imagile
 ```
 
 ## imagile
@@ -71,20 +65,6 @@ A repo's `CLAUDE.md` (with an `AGENTS.md` symlink) holds a few core principles. 
 **Image generation** drives chatgpt.com first, through the Claude desktop app's built-in browser or [Claude in Chrome](https://code.claude.com/docs/en/chrome), so images come from the ChatGPT plan. It falls back to the API with `OPENAI_API_KEY` when no signed-in browser is available, for masked edits, for large scripted batches, or when ChatGPT refuses or hits its daily cap. Transparent backgrounds and exact sizes stay on the website, with `background-removal` and a local crop as the fix. Each run is kept under `.claude/image-generation/<yymmdd-slug>/` with its prompt, and a shared `style.md` holds the palette.
 
 **Accessibility** runs axe-core in real Chromium through Playwright (Node 22.12 or later). Its dependencies install into a temp folder, never your project. Reports land in `.claude/accessibility/<timestamp>/`.
-
-## sunny
-
-| Skill | What it does |
-|-------|--------------|
-| `/sunny:chat` | Sunny's default register and context |
-| `/sunny:write` | Slack, email, proposals, blog and LinkedIn posts in Sunny's voice |
-| `/sunny:taste` | Sunny's visual taste and standing design corrections, on top of `/imagile:design` |
-| `/sunny:identity` | Bios, speaker profiles and personal essays |
-| `/sunny:eng-philosophy` | Team, process and leadership questions through the Phoenix Project, Agile values and staffeng.com, or a talk on them |
-| `/sunny:hiring` | Candidate pre-screens and hiring debriefs |
-| `/sunny:mentoring` | 1:1 prep and growth conversations |
-
-The voice lives in [`plugins/sunny/voice/STYLE-GUIDE.md`](plugins/sunny/voice/STYLE-GUIDE.md). Swap in your own writing samples to make the writing skills sound like you.
 
 ## Contributing
 
