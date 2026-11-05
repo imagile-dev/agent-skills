@@ -1,6 +1,6 @@
 ---
 name: image-generation
-description: Generate or edit images through the ChatGPT website in a browser, falling back to the OpenAI Images API. Use for logos, icons, hero art, mockups, transparent assets or prompt edits.
+description: Generate or edit images through the ChatGPT website in a browser, falling back to the OpenAI Images API. Use for logos, icons, hero art, mockups, GIFs, transparent assets or prompt edits.
 ---
 
 Generate images from text prompts (and edit existing ones) through the ChatGPT website first, and through the OpenAI Images API only when the website can't do the job. Both routes leave behind the same run folder, so the route is an implementation detail the user shouldn't have to think about. The bundled scripts are stdlib-only Python — no SDK, no `pip install`.
@@ -14,7 +14,7 @@ Generate images from text prompts (and edit existing ones) through the ChatGPT w
 - No browser tool in this session can reach chatgpt.com (see below), after you have looked for one.
 - ChatGPT isn't signed in, and the user would rather not sign in.
 - The website stalled in a way the stall table below says to route around: the daily image cap, or a second refusal.
-- The job needs a **masked edit**, or a scripted run of more than four variations. The website can't do either reliably.
+- The job needs an **animated GIF with set frame count, frame timing or size** (see Animated GIFs below), a **masked edit**, or a scripted run of more than four variations. The website can't do either reliably.
 - The user said to use the API.
 
 Transparent backgrounds and exact sizes no longer force the API. Ask ChatGPT for a transparent background in the prompt, and if the PNG comes back opaque, cut it out with the `background-removal` skill. For an exact size, generate at the closest aspect ratio and crop or resize locally (`uv run --with pillow python -c "..."`). Use the API's `--background transparent` or `-s WIDTHxHEIGHT` only when the local fix isn't good enough.
@@ -28,6 +28,7 @@ Say which route produced the image when you report back — the user's mental mo
 | Size | described in words ("16:9 landscape"), then cropped locally | `-s 1536x1024`, or any `WIDTHxHEIGHT` |
 | Transparent background | ask in the prompt, or `background-removal` after | `--background transparent` |
 | Masked edit | no | `--mask` |
+| Animated GIF | yes, by prompt (rolling out) | `--format gif` (preview access) |
 | Batch | a few, one message each | `-n 1..10` |
 | Ceiling | the account's daily image cap | account quota and billing |
 
@@ -61,13 +62,13 @@ It prints `run_dir`, `prompt_file`, `downloads_dir`, and the composed prompt bet
 
 **2. Open a new tab on `https://chatgpt.com/` and start a fresh chat.** A previous conversation's context bleeds into image results; a new chat is worth the extra click.
 
-**3. Type the prompt.** Lead with an explicit instruction — `Generate an image: <prompt>` — or pick the image tool from the composer's `+` menu, so ChatGPT renders instead of writing an essay about what it would render. Put aspect ratio in words ("square", "16:9 landscape", "tall 3:4 portrait"), add "transparent background" when the asset needs one, and put quality in the prompt's detail. To edit an existing image, attach it to the message and describe the change.
+**3. Type the prompt.** Lead with an explicit instruction — `Generate an image: <prompt>` — or pick the image tool from the composer's `+` menu, so ChatGPT renders instead of writing an essay about what it would render. Put aspect ratio in words ("square", "16:9 landscape", "tall 3:4 portrait"), add "transparent background" when the asset needs one, and put quality in the prompt's detail. To edit an existing image, attach it to the message and describe the change. For an animated GIF, say so in the prompt ("animated looping GIF, 2 second loop") or attach a still and ask ChatGPT to animate it.
 
 **4. Wait.** Generation runs 30–90 seconds. Check the page every 15 seconds or so — reading it in a tight loop wastes turns and tells you nothing new.
 
 **5. Get the file out.** Two ways, in this order:
 
-- **Download button.** Use the download control on the image itself (usually revealed by hovering or by opening the image full-size), then confirm the file actually landed in `downloads_dir` — the click can silently do nothing, and the built-in browser may save somewhere else.
+- **Download button.** Use the download control on the image itself (usually revealed by hovering or by opening the image full-size), then confirm the file actually landed in `downloads_dir` — the click can silently do nothing, and the built-in browser may save somewhere else. A GIF should arrive as a `.gif`. If the UI hands you another format (WebP, MP4), `collect` only takes images, so pass the path explicitly and tell the user.
 - **The image link.** If no file lands, read the image's `src` from the page (for example `[...document.querySelectorAll('img')].filter(i => i.naturalWidth >= 512).map(i => i.src)` in the page's JavaScript) and pass it to `collect --url`. The script fetches only `https` links on ChatGPT and OpenAI hosts. A `blob:` link, an expired link or one that needs the browser's cookies fails with exit `3`; then ask the user to save the image, or take the API route.
 
 **6. Collect it** into the run folder, which also finishes `prompt.md`:
@@ -164,8 +165,10 @@ Flags:
 | `-s, --size` | `auto`, `1024x1024`, `1536x1024`, `1024x1536`, or any `WIDTHxHEIGHT` |
 | `-q, --quality` | `low` / `medium` / `high` / `auto` |
 | `-n` | 1–10 images |
-| `--format` | `png` (default), `jpeg`, `webp` |
+| `--format` | `png` (default), `jpeg`, `webp`, `gif` |
 | `--compression` | 0–100, `jpeg`/`webp` only |
+| `--frames` | `--format gif` only. Frame count 2–16 (API default 9) |
+| `--frame-ms` | `--format gif` only. Milliseconds per frame, 20–2000 (API default 200) |
 | `--background` | `transparent` (needs png/webp), `opaque`, `auto` |
 | `--moderation` | `auto` (default) or `low`; generation only |
 | `--edit IMAGE...` | Edit these images instead of generating from scratch |
@@ -178,10 +181,27 @@ On Windows/PowerShell, quote paths containing spaces. `${CLAUDE_PLUGIN_ROOT}` re
 
 ## Model notes
 
-- **`gpt-image-2`** is the current model, and what chatgpt.com serves too. It takes arbitrary resolutions: both edges divisible by 16, max edge 3840, aspect ratio ≤ 3:1, total pixels between 655,360 and 8,294,400.
+- **`gpt-image-2`** is the default here. OpenAI has since shipped `gpt-image-2.5-sunburst` and `-flare` (2026-09-08) and `gpt-image-2.6-sunburst` and `-flare` (2026-11-04). Sunburst favors edit precision and quality, Flare favors speed. Pass them with `-m`. chatgpt.com now runs Images 2.6. The `gpt-image-2` family takes arbitrary resolutions: both edges divisible by 16, max edge 3840, aspect ratio ≤ 3:1, total pixels between 655,360 and 8,294,400.
 - Responses are always **base64** for `gpt-image-*` models — never URLs. Don't send `response_format`; it's DALL·E-only and the API rejects it here.
 - Max prompt length is 32,000 characters.
 - Rough cost per image at 1024×1024: `low` ≈ $0.006, `medium` ≈ $0.053, `high` ≈ $0.211. **Default to `low` or `medium` for drafts and iteration** and only spend `high` once the prompt is settled. Mention the cost if generating many high-quality images.
+
+## Animated GIFs
+
+OpenAI launched GIF generation on 2026-11-04 with Images 2.6, in ChatGPT and the API. Facts below come from OpenAI's API docs and changelog. Check them if the call fails, because the feature is new.
+
+- **API:** `POST /v1/images/generations` with `output_format: "gif"` and a `gpt-image-2.6-flare` or `gpt-image-2.6-sunburst` model. The script does this with `--format gif` and picks `gpt-image-2.6-flare` when you pass no `-m`.
+- **Fields:** `frame_count` 2–16 (default 9) and `frame_duration_ms` 20–2000 (default 200). Nine frames at 200 ms loop in 1.8 seconds. `size` applies per frame.
+- **Not supported with GIF:** the edits endpoint, `--mask`, streaming, partial images, `output_compression` and `prompt_rewriter`. The script rejects `--edit` and `--compression` with `--format gif`.
+- **Access:** the API reference says GIF needs access to the GIF preview for the model. A rejected request may mean the org lacks it.
+- **Request in the prompt:** describe the subject, the motion and the loop. A loop that returns to its start pose reads best.
+- **ChatGPT UI:** users can turn a prompt or a still into a GIF, change speed, edit single frames and share it. The announcement reportedly covers all subscription tiers. Frame limits, regional rollout and the download format are not documented yet.
+- **Safety:** OpenAI's system card says GIF output has extra safeguards that block more content than stills.
+- **Uploads:** the help center reportedly says an uploaded animated GIF cannot be edited. Attach a still frame instead.
+
+```bash
+uv run "${CLAUDE_PLUGIN_ROOT}/skills/image-generation/scripts/generate_image.py" "friendly robot waving, seamless loop" --slug robot-wave --format gif --frames 8 --frame-ms 120 -s 512x512
+```
 
 ---
 
@@ -227,7 +247,7 @@ Both scripts do this by default — one folder per run, named `YYMMDD-short-prom
 
 ## After generating: is this headed for the web?
 
-Both routes return PNG, which is a fine master and a bad thing to ship. If the image is going onto a site or app, hand off to the `imagile:web-optimize` skill to produce AVIF/WebP derivatives — the run folder keeps the PNG master, and `web/` gets the served files.
+Both routes return PNG for stills, which is a fine master and a bad thing to ship. A GIF stays a GIF. Do not run it through `imagile:web-optimize` unless that skill keeps the animation. If the image is going onto a site or app, hand off to the `imagile:web-optimize` skill to produce AVIF/WebP derivatives — the run folder keeps the PNG master, and `web/` gets the served files.
 
 Assess before acting, don't optimize reflexively. A slide graphic, a print asset, a mockup, or an image the user just wants to look at should stay a PNG. That skill carries the full decision framework; the short version is that a web project plus a real payoff means yes, and anything else means mention it and move on.
 
