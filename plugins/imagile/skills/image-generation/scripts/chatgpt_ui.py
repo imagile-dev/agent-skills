@@ -49,7 +49,7 @@ from generate_image import (
 
 SOURCE = "chatgpt-ui"
 UI_MODEL = "gpt-image-2 (chatgpt.com)"
-IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
+IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}  # .gif: Images 2.6 animated output
 NOTHING_FOUND_EXIT = 3
 # Hosts ChatGPT serves generated images from. A link read off the page is only
 # fetched when it points here, so page content can't steer the script elsewhere.
