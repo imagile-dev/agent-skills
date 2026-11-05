@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<h1 align="center">Imagile Claude plugins</h1>
+<h1 align="center">Imagile Agent Skills</h1>
 
 <p align="center">
   Skills we use every day to build software with Claude Code. Open source: use them, fork them, tell us what breaks.
